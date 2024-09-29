@@ -11,6 +11,7 @@ format: html
 ```{r}
 library(tidyverse)
 library(knitr)
+library(ggridges)
 ```
 
 
@@ -104,7 +105,74 @@ df <- df |>
 ## Plot blizzards
 
 ```{r}
-ggplot(df, aes(x = year, y = month, fill = snowfall)) +
-  geom_tile()
+library(viridis)
+library(hrbrthemes)
+
+ggplot(df, aes(x = snowfall, y = month, fill= ..x..)) +
+  geom_density_ridges_gradient(scale =3, rel_min_height = 0.001, gradient_lwd = 1) +
+  scale_fill_viridis(name = "snowfall", option = "mako", direction = -1) +
+  labs(title = 'Buffalo Snowfall 1940 - 2023') +
+  theme_minimal() +
+  scale_y_discrete(limits = rev(month_levels))
+
+
 ```
 
+```{r}
+
+blizzards <- df |> 
+  filter(snowfall > 60)
+
+ggplot(df, aes(x = date, y = snowfall)) +
+  geom_bar(stat = "identity", just = 1) +
+  geom_bar(stat = "identity", width = .20 * nrow(df), data = blizzards, fill = "#6280a5") +
+  labs(title = 'Snowfall by Month', x = 'Month', y = 'Snowfall') +
+  theme_minimal()
+```
+
+```{r}
+# Blizzard of 77
+b_77 <- df |> 
+  filter(year > 1970 & year < 1980) |> 
+  mutate(blizzard = snowfall == max(snowfall))
+
+ggplot(b_77, aes(x = date, y = snowfall, fill=blizzard)) +
+  geom_bar(stat = "identity", just = 1) +
+  labs(title = "Great Blizzard of '77", x = 'Month', y = 'Snowfall') +
+  annotate(geom = 'label', x=as.Date('1977-01-01'), y = 80, label = "Great Blizzard of '77") +
+  theme_minimal() +
+  scale_fill_manual(values = c("TRUE" = "#6280a5"))
+
+```
+
+
+```{r}
+# 06 October Surprise
+b_06 <- df |> 
+  filter(month == "October") |> 
+  mutate(blizzard = snowfall == max(snowfall))
+
+ggplot(b_06, aes(x = year, y = snowfall, fill=blizzard)) +
+  geom_bar(stat = "identity", just = 1) +
+  labs(title = "The October Surprise", x = 'Octobers', y = 'Snowfall') +
+ annotate(geom = 'label', x=2006, y = 25, label = "The October Surprise") +
+  theme_minimal() +
+  scale_fill_manual(values = c("TRUE" = "#6280a5"))
+
+```
+
+```{r}
+# Christmas Blizzard of 2022
+b_22 <- df |> 
+  filter(month == "December" & year > 2014) |> 
+  mutate(blizzard = snowfall == max(snowfall))
+
+
+ggplot(b_22, aes(x = date, y = snowfall, fill=blizzard)) +
+  geom_bar(stat = "identity", just = 1) +
+  labs(title = "Great Blizzard of '77", x = 'Month', y = 'Snowfall') +
+  #annotate(geom = 'label', x=as.Date('1977-01-01'), y = 80, label = "Great Blizzard of '77") +
+  theme_minimal() +
+  scale_fill_manual(values = c("TRUE" = "#6280a5"))
+
+```
