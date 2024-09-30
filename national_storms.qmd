@@ -1,0 +1,221 @@
+---
+title: "National Storms"
+author: "Kevin Havis"
+date: "2024-09-28"
+output: html_document
+---
+
+
+# National Storms
+
+The NOAA provides data on tropical storms and hurricanes on their [website](https://vlab.noaa.gov/web/mdl/historic-storms), however the data is not very clean.
+
+In this article we will focus on scraping the data from the web and cleaning it into usable fashion. We will then compare the storms' quantitative impact by category.
+
+*Data recommended by Kim Koon*
+
+```{r, output = FALSE}
+library(tidyverse)
+library(rvest)
+library(janitor)
+library(knitr)
+```
+
+
+## Web scraping
+
+First we will scrape the data from the web page. It is already formatted as an HTML table so scraping should be simple.
+
+```{r}
+# Read html
+
+url <- "https://vlab.noaa.gov/web/mdl/historic-storms"
+webpage <- read_html(url)
+
+```
+
+```{r}
+# Specify the node we're interested in
+div_node <- html_node(webpage, xpath = "//table[1]")
+```
+
+```{r}
+# Convert it to a table
+table <- div_node |> 
+  html_table()
+```
+
+```{r}
+# Our starting point
+head(table)
+```
+
+## Data cleaning
+
+Now we can focus on cleaning the data. As we can see, there are many combined columns in this dataset, with mixed delimiters, white spaces, and structure.
+
+We will try to leave the values itself as intact as possible and perform minimal transformation; as we do not understand the meaning behind each variable well, we should leave that to the meteorologists.
+
+### Clean column names
+
+Janitor is a nice package to quickly get data into workable shape. Here we'll just clean the column names so they're a bit more workable.
+
+```{r}
+df <- janitor::clean_names(table)
+```
+
+
+### Separating the columns
+
+Now we will focus on separating the data into tidy and respective columns, one column at a time.
+
+```{r}
+# fix storm column
+
+df <- df |> 
+  mutate(x2024_storm = str_replace_all(x2024_storm, "\\s+", "")) |> 
+  separate_wider_regex(x2024_storm,
+                        patterns = c(
+                          year = "\\d{4}",
+                          "-",
+                          storm = ".*"
+                          ),
+                          too_few = "align_start"
+                       )
+```
+
+```{r}
+# fix date column
+
+df <- df |> 
+  separate_wider_regex(date, 
+                       patterns = c(
+                         month = "\\w{3}",
+                         "\\s",
+                         day = "\\d{1,2}"
+                       ),
+                       too_few = "align_start"
+                       )
+```
+
+```{r}
+# Fix surge column
+
+class <- df |> 
+  mutate(class = str_extract(surge, "w\\d")) |> 
+  select(class)
+
+mhhw <- df |> 
+  mutate(mhhw = str_extract(surge, "(\\d*\\.?\\d+) mhhw")) |> 
+  mutate(mhhw = str_extract(mhhw, "\\d*\\.?\\d+")) |> 
+  select(mhhw)
+
+df <- df |> 
+  cbind(class, mhhw) |> 
+  select(-surge)
+```
+
+```{r}
+# fix cat_pres_dead_bn column
+
+df <- df |> separate_wider_delim(
+    cat_pres_dead_bn, delim = ",",
+    names = c("category", "pres", "dead", "bn")
+    ) |> 
+  mutate(
+    across(
+      category:bn,
+      ~ str_replace_all(.x, "[-)(>$+]", "")
+      )
+    )
+```
+
+```{r}
+df <- df |> separate_wider_delim(
+  area,
+  ",",
+  names_sep = "",
+  too_few = "align_start"
+  )
+```
+
+```{r}
+# Show our progress
+head(df)
+```
+
+
+### Long format and nulls
+
+This data is actually relatively well suited to a wide format given the amount of dimensions, but we can improve the `areas` column by converting that into long format.
+
+We'll also make sure we've replaced any empty strings will null values.
+
+```{r}
+df <- df |> pivot_longer(
+  cols = starts_with("area"),
+  names_to = NULL,
+  values_to = "area",
+  values_drop_na = TRUE)
+```
+
+```{r}
+# Fill NAs
+
+df <- df |> 
+  mutate(across(c(year, day, pres, dead, bn, mhhw), ~as.numeric(.x))) |> 
+  mutate(across(where(is.character), ~ na_if(.,"")))
+
+```
+
+```{r}
+head(df)
+```
+
+## Analysis
+
+Now that our data is tidy, we can perform some analysis. We'd like to know the quantitative impact of a storm by its category, so we will group by category and then visualize the impact for `pres`, `dead`, `bn`, and `mhhw`.
+
+```{r warning = FALSE}
+
+category_levels <- c('Cat5', 'Cat4', 'Cat3', 'Cat2', 'Cat1', 'TS')
+
+gb <- df |> 
+  pivot_longer(cols = c(pres, dead, bn, mhhw),
+               names_to = "metric",
+               values_to = "value") |> 
+  mutate(category = factor(category, levels = category_levels))
+
+storm_palette = c(
+  pres = "#2f3e46",
+  dead = "#354f52",
+  bn = "#52796f",
+  mhhw = "#84a98c"
+)
+
+ggplot(gb, aes(x = category, y = value, fill = metric)) +
+  geom_bar(stat = 'identity', position = 'dodge') +
+  labs(
+    title = "Impact of Tropical Storms by Category",
+    x = "Category",
+    y = "Metric") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = storm_palette) +
+  facet_wrap(~ metric, scales = "free")
+```
+
+We had to do some research to understand these metrics but we are assuming the below;
+
+- `bn` indicates the dollar value of destruction, in billions
+- `dead` indicates the number of individuals killed by the storm
+- `mhhw` represents the Mean Higher High Water, or the average level of flooding
+- `pres` represents the mean pressure of the storm
+
+We can see from our plots that Category 5 storms are the most lethal my a considerable margin, as well as the mostly costly. Flooding is relatively similar as measured by `mhhw` for category 5 and 4, while tropical storms have less impact.
+
+Interestingly, tropical storms seem to have the highest pressure. Upon further research, I discovered that higher pressures indicate the storm is less "concentrated" and potentially dissipating. This is consistent with our results as tropical storms are considered the least severe type of storm.
+
+## Conclusion
+
+In this article, we scraped tropical storms data from a NOAA webpage. We then cleaned and transformed the data into usable shape. We then visualized the storms by category to better understand the relative impacts.

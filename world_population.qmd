@@ -1,0 +1,94 @@
+---
+title: "World Population"
+author: "Kevin Havis"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(janitor)
+library(sf)
+library(rnaturalearth)
+library(colorspace)
+```
+
+
+## World Population
+
+```{r}
+df <- read_csv("world_population.csv")
+
+df <- janitor::clean_names(df)
+
+head(df)
+```
+
+```{r}
+df |> pivot_longer(cols = starts_with("x"), names_to = "year", values_to = "population") |> 
+  mutate(year = str_extract(year, "\\d+"))
+```
+
+
+```{r}
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+#world <- world |> 
+#  mutate(sov_a3 = str_replace(sov_a3, "US1", "USA"))
+```
+
+```{r}
+map_data <- world |> 
+  left_join(df, by = c("adm0_a3" = "cca3"))
+```
+
+```{r}
+ggplot(data = map_data) +
+  geom_sf(aes(fill = growth_rate)) +
+  scale_fill_continuous_divergingx(
+    palette = 'Spectral',
+    mid = 1.00,
+    rev = TRUE,
+    na.value = 'grey',
+    scales::squish(map_data$growth_rate, c(0.95, 1.02))
+                                   )+
+    #begin = 0.95, end = na.value = 'grey', limits = c(min(map_data$growth_rate, na.rm = TRUE),max(map_data$growth_rate, na.rm = TRUE))) +
+  labs(title = "Country Growth Rates", fill = "Growth Rate (%)") +
+  theme_void()
+
+```
+```{r}
+eur <- ne_countries(continent = "europe") |> 
+  left_join(df, by = c("adm0_a3" = "cca3"))
+
+ggplot(data = eur) +
+  geom_sf(aes(fill = growth_rate)) +
+  scale_fill_continuous_divergingx(
+    palette = 'Spectral',
+    mid = 1.00,
+    rev = TRUE,
+    na.value = 'grey',
+    scales::squish(map_data$growth_rate, c(0.95, 1.02))
+                                   )+
+    #begin = 0.95, end = na.value = 'grey', limits = c(min(map_data$growth_rate, na.rm = TRUE),max(map_data$growth_rate, na.rm = TRUE))) +
+  labs(title = "Country Growth Rates", fill = "Growth Rate (%)") +
+  theme_void()
+```
+
+```{r}
+afr <- ne_countries(continent = "africa") |> 
+  left_join(df, by = c("adm0_a3" = "cca3"))
+
+ggplot(data = afr) +
+  geom_sf(aes(fill = growth_rate)) +
+  scale_fill_continuous_divergingx(
+    palette = 'Spectral',
+    mid = 1.00,
+    rev = TRUE,
+    na.value = 'grey',
+    scales::squish(map_data$growth_rate, c(0.95, 1.02))
+                                   )+
+    #begin = 0.95, end = na.value = 'grey', limits = c(min(map_data$growth_rate, na.rm = TRUE),max(map_data$growth_rate, na.rm = TRUE))) +
+  labs(title = "Country Growth Rates", fill = "Growth Rate (%)") +
+  theme_void()
+```

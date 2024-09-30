@@ -4,24 +4,33 @@ author: "Kevin Havis"
 format: html
 ---
 
-## Introduction
-
-## Reading the data
-
-```{r}
+```{r, output = FALSE}
 library(tidyverse)
 library(knitr)
 library(ggridges)
+library(viridis)
+library(hrbrthemes)
 ```
 
+## Introduction
+
+The city of Buffalo frequently finds itself victim to the weather phenomenon known as "[Lake effect snow](https://en.wikipedia.org/wiki/Lake-effect_snow)". Lake effect snow occurs when cold winds and weather systems move across relatively warm bodies of water. The winds create an almost instant sublimation of the water into heavy precipitation; snow. Being positioned next to a very deep lake that maintains much of its temperature throughout the winter season, Buffalo frequently experiences severe blizzards, with snowfall up to 60 inches accumulating over the course of a few days.
+
+In this article we will tidy a dataset from the National Weather Association that provides records of monthly snowfall in Buffalo since 1940. We will will also highlight some of the more extreme blizzard events using this data.
+
+## Reading the data
+
+The dataset is structured but not in the best format for analysis. The years and months are organized into seasons and structured into a wide-format.
 
 ```{r}
 df <- read.csv('buffalo_weather.csv')
 
-head(df)
+kable(head(df))
 ```
 
-```{r}
+We will first organize the data into a tidy format by breaking the seasons into proper years and months and pivoting into a long format.
+
+```{r, warning=FALSE}
 df <- df |>
   
   # Rename columns
@@ -81,6 +90,8 @@ df <- df |>
   select(date, season, year, month, snowfall)
 ```
 
+We will also set the months as factors to be able to sort them properly later.
+
 ```{r}
 month_levels <- c(
   "January",
@@ -101,36 +112,56 @@ df <- df |>
   mutate(month = factor(month, levels = month_levels))
 ```
 
-
-## Plot blizzards
-
 ```{r}
-library(viridis)
-library(hrbrthemes)
-
-ggplot(df, aes(x = snowfall, y = month, fill= ..x..)) +
-  geom_density_ridges_gradient(scale =3, rel_min_height = 0.001, gradient_lwd = 1) +
-  scale_fill_viridis(name = "snowfall", option = "mako", direction = -1) +
-  labs(title = 'Buffalo Snowfall 1940 - 2023') +
-  theme_minimal() +
-  scale_y_discrete(limits = rev(month_levels))
-
-
+kable(head(df))
 ```
 
-```{r}
 
+## What does typical snowfall look like?
+
+To better understand what extreme snowfall looks like, we must first understand what typical snowfall looks like. We can do this by plotting the distributions of snowfall over our time period per month.
+
+
+```{r, message = FALSE, echo = FALSE}
+ggplot(df, aes(x = snowfall, y = month, fill= after_stat(x))) +
+  geom_density_ridges_gradient(scale =3, rel_min_height = 0.001, gradient_lwd = 1) +
+  scale_fill_viridis(name = "snowfall", option = "mako", direction = -1) +
+  labs(title = 'Distribution of Buffalo snowfall by month (1940 - 2023)') +
+  theme_minimal() +
+  scale_y_discrete(limits = rev(month_levels))
+```
+
+We can already see significant outliers in January and December. Interestingly, the snowfall in October is almost the same as July with one exception; this is one of our blizzards we will explore.
+
+Let's get a more specific view of the outliers by plotting snowfall for each month.
+
+```{r, warning=FALSE, echo = FALSE}
 blizzards <- df |> 
   filter(snowfall > 60)
 
 ggplot(df, aes(x = date, y = snowfall)) +
   geom_bar(stat = "identity", just = 1) +
   geom_bar(stat = "identity", width = .20 * nrow(df), data = blizzards, fill = "#6280a5") +
-  labs(title = 'Snowfall by Month', x = 'Month', y = 'Snowfall') +
+  labs(title = 'Months of significant snowfall', x = '', y = 'Snowfall (in)') +
+  theme(legend.position = "none") +
   theme_minimal()
 ```
 
-```{r}
+We can see an increasing trend of extreme snowfall (months with more than 60 inches of snow) since 1977, which coincidentally was the year of one of the most catastrophic blizzards Buffalo has seen.
+
+This correlates with our general understanding of climate change; as mean temperatures rise, the lakes surrounding Buffalo stay warmer and freeze over later, therefore generating more precipitation when winter weather systems move in.
+
+Note that this data represents the snowfall for a given month, which does not necessarily indicate a blizzard occurred; snowfall per day would be more indicative, but we unfortunately do not have that data available.
+
+Instead, we'll use our domain knowledge to pick out three well-known storms; The Great Blizzard of '77, The October Surprise, and the Christmas Blizzard of 2022.
+
+## The Great Blizzard of '77
+
+At the time, the Great Blizzard of '77 was the most significant snowfall event recorded. Winds gusted from 46 to 69 mph, forming snow drifts up to 30-40 feet. Temperatures fell 26 degrees Fahrenheit in the first four hours. There were 23 storm related deaths in Western New York by the time the blizzard subsided.
+
+[Wikipedia Article](https://en.wikipedia.org/wiki/Blizzard_of_1977)
+
+```{r, echo = FALSE}
 # Blizzard of 77
 b_77 <- df |> 
   filter(year > 1970 & year < 1980) |> 
@@ -138,15 +169,20 @@ b_77 <- df |>
 
 ggplot(b_77, aes(x = date, y = snowfall, fill=blizzard)) +
   geom_bar(stat = "identity", just = 1) +
-  labs(title = "Great Blizzard of '77", x = 'Month', y = 'Snowfall') +
-  annotate(geom = 'label', x=as.Date('1977-01-01'), y = 80, label = "Great Blizzard of '77") +
+  labs(title = "Great Blizzard of '77", x = 'Month', y = 'Snowfall (in)') +
+  annotate(geom = 'label', x=as.Date('1977-01-01'), y = 75, label = "Great Blizzard of '77") +
+  theme(legend.position = "none") +
   theme_minimal() +
-  scale_fill_manual(values = c("TRUE" = "#6280a5"))
+  scale_fill_manual(values = c("TRUE" = "#6280a5"), guide="none")
 
 ```
+## The October Surprise
 
+As we saw in our distributions, October is generally a snow-free month, hence the name of this next storm. Lake Storm Aphid, or simply the October Surprise, brought hail, ice pellets, and 24 inches of snow accumulation in twenty four hours, from October 12th to October 13th in 2006.
 
-```{r}
+[Wikipedia Article](https://en.wikipedia.org/wiki/Lake_Storm_Aphid)
+
+```{r, echo = FALSE}
 # 06 October Surprise
 b_06 <- df |> 
   filter(month == "October") |> 
@@ -154,14 +190,22 @@ b_06 <- df |>
 
 ggplot(b_06, aes(x = year, y = snowfall, fill=blizzard)) +
   geom_bar(stat = "identity", just = 1) +
-  labs(title = "The October Surprise", x = 'Octobers', y = 'Snowfall') +
- annotate(geom = 'label', x=2006, y = 25, label = "The October Surprise") +
+  labs(title = "The October Surprise", x = 'Octobers', y = 'Snowfall (in)') +
+  annotate(geom = 'label', x=2006, y = 25, label = "The October Surprise") +
   theme_minimal() +
-  scale_fill_manual(values = c("TRUE" = "#6280a5"))
-
+  scale_fill_manual(values = c("TRUE" = "#6280a5"), guide="none") +
+  theme(legend.position = "none")
 ```
 
-```{r}
+## The Christmas Blizzard of 2022
+
+The most recent blizzard occurred between December 23rd and December 27th as an extratropical cyclone created extreme winter storm conditions across North America. In total the storm killed at least 100 people, 41 of them occurred specifically in Buffalo. The lake effect snowfall, over 56 inches  across the storm's duration, explained 82% of the month's total snowfall and created large drifts that made vehicular and even on-foot transport impossible.
+
+It was described by the National Oceanic and Atmospheric Administration (NOAA) as a "historic arctic outbreak".
+
+[Wikipedia Article](https://en.wikipedia.org/wiki/December_2022_North_American_winter_storm)
+
+```{r, echo = FALSE}
 # Christmas Blizzard of 2022
 b_22 <- df |> 
   filter(month == "December" & year > 2014) |> 
@@ -170,9 +214,14 @@ b_22 <- df |>
 
 ggplot(b_22, aes(x = date, y = snowfall, fill=blizzard)) +
   geom_bar(stat = "identity", just = 1) +
-  labs(title = "Great Blizzard of '77", x = 'Month', y = 'Snowfall') +
-  #annotate(geom = 'label', x=as.Date('1977-01-01'), y = 80, label = "Great Blizzard of '77") +
+  labs(title = "The Christmas Blizzard of 2022", x = 'Decembers', y = 'Snowfall (in)') +
+  annotate(geom = 'label', x=as.Date('2020-12-01'), y = 70, label = "The Christmas Blizzard of 2022") +
+  theme(legend.position = "none") +
   theme_minimal() +
-  scale_fill_manual(values = c("TRUE" = "#6280a5"))
+  scale_fill_manual(values = c("TRUE" = "#6280a5"), guide="none")
 
 ```
+
+## Conclusion
+
+In this article we organized monthly snowfall data for the city of Buffalo as reported by the National Weather Association. We examined typical distributions of snow for each calendar month, then drilled into specific storms, their context, and their impact.
