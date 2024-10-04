@@ -1,0 +1,172 @@
+---
+title: "Flight Delays"
+author: "Kevin Havis"
+format: html
+---
+
+## Introduction
+
+Let's analyze some flight data!
+
+Our initial data is unfortunately only as an image, so we'll start by recreating it using `tribble` and performing some basic clean up.
+
+Then we'll perform some exploratory data analysis to get an idea of delays for flights.
+
+Our data contains on-time & delayed flight counts across two airlines and five cities on the West Coast.
+
+## Creating the data
+
+```{r, output = FALSE}
+
+library(tidyverse)
+library(knitr)
+```
+
+![Raw Data](raw_data.png)
+
+```{r}
+# Create the data
+
+df <- tibble::tribble(
+  ~"",          ~"",       ~`Los Angeles`,  ~Phoenix, ~`San Diego`, ~`San Francisco`, ~Seattle,
+  "ALASKA",     "on time", 497,             221,       212,           503,              1841,
+  NA,           "delayed", 62,              12,        20,            102,              305,
+  NA,           NA,        NA,              NA,        NA,            NA,               NA,
+  "AM WEST",    "on time", 694,             4840,      383,           320,              201,
+  NA,           "delayed", 117,             415,       65,            129,              61
+)
+
+kable(df)
+```
+
+Our initial data isn't too bad, but it is certainly not tidy. We'll address this by dropping the empty row, renaming our columns, and pivoting the dataset longer to "flatten" it.
+
+```{r}
+# Drop empty row, rename columns, fill empty cells, and pivot into long format
+
+df <- df |> 
+  rename("airline" = 1, "flight_status" = 2) |> 
+  slice(c(-3)) |> 
+  fill(airline) |> 
+  rename_with(~ str_to_lower(str_replace(.x, " ", "_")), .cols = 3:7) |> 
+  pivot_longer(3:7, names_to = "city", values_to = "flight_count") |> 
+  arrange(desc(flight_count))
+
+kable(df)
+```
+
+We now have a nice, flat, long formatted and tidy data set. We'll export this to a new CSV file and continue on with some analysis!
+
+```{r}
+write.csv(df, "output_data.csv", row.names = FALSE)
+```
+
+
+## Analysis
+
+Let's answer some basic questions.
+
+We'll start with a general overview of our data. Since it is a simple data set, we can visualize most of the features in one plot.
+
+```{r}
+# Set this up so we can factor airline for our factor wrap
+df |> 
+  mutate() |> 
+
+# Plot data across two facets
+ggplot(
+       aes(
+         x = flight_count,
+         y = reorder(
+          str_to_title( # Make city names pretty
+            str_replace_all(city, "_", " ")),
+          flight_count),
+         fill = flight_status)) +
+  geom_bar(stat = 'identity') +
+  facet_wrap(~factor(airline, c('AM WEST', 'ALASKA'))) +
+  labs(
+    title = "Flight data overview",
+    y = "Flights",
+    x = "City",
+    fill = "Flight Status"
+  ) + 
+  scale_fill_manual(values = c('#E06565', '#0088CC')) +
+  theme_minimal()
+
+```
+
+### Compare delayed flights across airlines
+
+We can see that out of the total flights, AM West covers a significant proportion, but the rate of delayed versus on time is roughly comparable between the two airlines (~5-6%).
+
+```{r}
+df |> 
+  group_by(flight_status, airline) |> 
+  summarize(flights = sum(flight_count)) |> 
+  mutate(prop = flights/sum(flights)) |> 
+  subset(select=c("flight_status", "airline", "prop")) |> 
+  spread(flight_status, prop) |> 
+  kable()
+```
+
+
+```{r, warning=FALSE}
+# Plot amount of delayed flights by city
+ggplot(df, aes(x = airline, y = flight_count, fill = flight_status)) +
+  geom_bar(stat = "identity", position = "fill") + 
+  labs(
+    x = "Airline",
+    y = "Flights (proportion)",
+    title = " Proportion of flights delayed by airline",
+    fill = "Flight Status"
+  ) +
+  scale_fill_manual(values = c('#E06565', '#0088CC')) +
+  theme_minimal()
+```
+
+
+
+### Compare delays across cities
+
+San Francisco generally has the highest rate of delays for both airlines, especially for AM West. We can also see that Phoenix generally has the best rate of on-time flights.
+
+```{r}
+# Calculate proportions within each airline-city group
+df_proportions <- df %>%
+  group_by(airline, city) %>%
+  mutate(total_flights = sum(flight_count),
+         proportion = flight_count / total_flights) %>%
+  ungroup()
+
+# Reshape the data to wide format with flight_status as columns
+df_proportions %>%
+  select(airline, city, flight_status, proportion) %>%
+  pivot_wider(names_from = flight_status, values_from = proportion) |> 
+  arrange(airline, city) |> 
+  kable()
+
+```
+
+```{r}
+ggplot(df, aes(y = str_to_title(str_replace_all(city, "_", " ")), x = flight_count, fill = flight_status)) +
+  geom_bar(position = 'fill', stat="identity") +
+  facet_wrap(~airline) +
+    labs(
+    y = "City",
+    x = "Flights (proportion)",
+    title = " Proportion of flights delayed by airline",
+    fill = "Flight Status"
+  ) +
+  scale_fill_manual(values = c('#E06565', '#0088CC')) +
+  theme_minimal()
+```
+
+### Analysis summary
+
+In summary, despite the drastic difference in the overall number of flights, we can see that the airlines have similar delay rates to each other when compared in aggregate. However, that difference becomes far more meaningful when you evaluate it based per city, as we observed with San Francisco and Phoenix. 
+
+## Conclusion
+
+In this article we took a generated a simple dataset of flight data, tidied it into a proper long format for data analysis, then created visualizations to explore and understand how the rates of flight delays compare across airlines and cities.
+
+

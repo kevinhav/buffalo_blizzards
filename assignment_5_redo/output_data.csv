@@ -1,0 +1,21 @@
+"airline","flight_status","city","flight_count"
+"AM WEST","on time","phoenix",4840
+"ALASKA","on time","seattle",1841
+"AM WEST","on time","los_angeles",694
+"ALASKA","on time","san_francisco",503
+"ALASKA","on time","los_angeles",497
+"AM WEST","delayed","phoenix",415
+"AM WEST","on time","san_diego",383
+"AM WEST","on time","san_francisco",320
+"ALASKA","delayed","seattle",305
+"ALASKA","on time","phoenix",221
+"ALASKA","on time","san_diego",212
+"AM WEST","on time","seattle",201
+"AM WEST","delayed","san_francisco",129
+"AM WEST","delayed","los_angeles",117
+"ALASKA","delayed","san_francisco",102
+"AM WEST","delayed","san_diego",65
+"ALASKA","delayed","los_angeles",62
+"AM WEST","delayed","seattle",61
+"ALASKA","delayed","san_diego",20
+"ALASKA","delayed","phoenix",12
