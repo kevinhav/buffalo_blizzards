@@ -26,6 +26,8 @@ library(knitr)
 
 First we will scrape the data from the web page. It is already formatted as an HTML table so scraping should be simple.
 
+> As an intersting note, this table was actually updated to include Hurricane Helene in between writing this notebook and publishing.
+
 ```{r}
 # Read html
 
@@ -50,6 +52,11 @@ table <- div_node |>
 head(table)
 ```
 
+```{r}
+write_csv(table, "national_storms_raw_data.csv")
+```
+
+
 ## Data cleaning
 
 Now we can focus on cleaning the data. As we can see, there are many combined columns in this dataset, with mixed delimiters, white spaces, and structure.
@@ -61,6 +68,8 @@ We will try to leave the values itself as intact as possible and perform minimal
 Janitor is a nice package to quickly get data into workable shape. Here we'll just clean the column names so they're a bit more workable.
 
 ```{r}
+df <- read.csv("national_storms_raw_data.csv")
+
 df <- janitor::clean_names(table)
 ```
 
@@ -101,18 +110,21 @@ df <- df |>
 ```{r}
 # Fix surge column
 
+# Extract class
 class <- df |> 
-  mutate(class = str_extract(surge, "w\\d")) |> 
+  mutate(class = str_extract(storm_tide, "w\\d")) |> 
   select(class)
 
+# Extract mhhw
 mhhw <- df |> 
-  mutate(mhhw = str_extract(surge, "(\\d*\\.?\\d+) mhhw")) |> 
+  mutate(mhhw = str_extract(storm_tide, "(\\d*\\.?\\d+) mhhw")) |> 
   mutate(mhhw = str_extract(mhhw, "\\d*\\.?\\d+")) |> 
   select(mhhw)
 
+# Reassble the dataframe
 df <- df |> 
   cbind(class, mhhw) |> 
-  select(-surge)
+  select(-storm_tide)
 ```
 
 ```{r}
@@ -131,6 +143,7 @@ df <- df |> separate_wider_delim(
 ```
 
 ```{r}
+# 
 df <- df |> separate_wider_delim(
   area,
   ",",
@@ -205,7 +218,7 @@ ggplot(gb, aes(x = category, y = value, fill = metric)) +
   facet_wrap(~ metric, scales = "free")
 ```
 
-We had to do some research to understand these metrics but we are assuming the below;
+We had to do some research to understand these metrics but we understand them to be as below;
 
 - `bn` indicates the dollar value of destruction, in billions
 - `dead` indicates the number of individuals killed by the storm
