@@ -90,22 +90,21 @@ ggplot(
     x = "City",
     fill = "Flight Status"
   ) + 
-  scale_fill_manual(values = c('#E06565', '#0088CC')) +
+  scale_fill_manual(values = c('#DB504A', '#A2A7A5')) +
   theme_minimal()
 
 ```
 
 ### Compare delayed flights across airlines
 
-We can see that out of the total flights, AM West covers a significant proportion, but the rate of delayed versus on time is roughly comparable between the two airlines (~5-6%).
+When comparing airlines by flight status, we can see that the rate of delayed versus on time is roughly comparable between the two airlines, with AM west having about 11% of flights delayed and Alaska having 13%.
+
 
 ```{r}
 df |> 
-  group_by(flight_status, airline) |> 
-  summarize(flights = sum(flight_count)) |> 
-  mutate(prop = flights/sum(flights)) |> 
-  subset(select=c("flight_status", "airline", "prop")) |> 
-  spread(flight_status, prop) |> 
+  group_by(airline, flight_status) |> 
+  summarize(flight_count = sum(flight_count), .groups = "drop") |> 
+  mutate(prop = flight_count / sum(flight_count) * 100, .by = c(airline)) |> 
   kable()
 ```
 
@@ -120,7 +119,7 @@ ggplot(df, aes(x = airline, y = flight_count, fill = flight_status)) +
     title = " Proportion of flights delayed by airline",
     fill = "Flight Status"
   ) +
-  scale_fill_manual(values = c('#E06565', '#0088CC')) +
+  scale_fill_manual(values = c('#DB504A', '#A2A7A5')) +
   theme_minimal()
 ```
 
@@ -130,35 +129,42 @@ ggplot(df, aes(x = airline, y = flight_count, fill = flight_status)) +
 
 San Francisco generally has the highest rate of delays for both airlines, especially for AM West. We can also see that Phoenix generally has the best rate of on-time flights.
 
+This chart also demonstrates that when comparing airlines across cities, Alaska has a better rate of on time flights, which contradicts our earlier observation that AM West had more on time flights. This is known as [Simpson's Paradox](https://en.wikipedia.org/wiki/Simpson%27s_paradox).
+
 ```{r}
-# Calculate proportions within each airline-city group
-df_proportions <- df %>%
-  group_by(airline, city) %>%
-  mutate(total_flights = sum(flight_count),
-         proportion = flight_count / total_flights) %>%
-  ungroup()
+on_time_flights <- df |> 
+  group_by(airline, city) |> 
+  summarise(total_flights = sum(flight_count), .groups = "drop") |>   
+  left_join(df |> filter(flight_status == "on time") |>   
+              group_by(airline, city) |> 
+              summarise(on_time_count = sum(flight_count), .groups = "drop"), 
+            by = c("airline", "city")) |> 
+  mutate(percentage = (on_time_count / total_flights) * 100) |> 
+  ungroup() 
 
-# Reshape the data to wide format with flight_status as columns
-df_proportions %>%
-  select(airline, city, flight_status, proportion) %>%
-  pivot_wider(names_from = flight_status, values_from = proportion) |> 
-  arrange(airline, city) |> 
-  kable()
+# Reorder the cities by total flight count
+on_time_flights <- on_time_flights |> 
+  mutate(city = str_to_title(str_replace_all(city, "_", " ")), city) |> 
+  mutate(city = fct_reorder(city, total_flights))
 
+kable(on_time_flights)
 ```
 
+
 ```{r}
-ggplot(df, aes(y = str_to_title(str_replace_all(city, "_", " ")), x = flight_count, fill = flight_status)) +
-  geom_bar(position = 'fill', stat="identity") +
-  facet_wrap(~airline) +
-    labs(
-    y = "City",
-    x = "Flights (proportion)",
-    title = " Proportion of flights delayed by airline",
-    fill = "Flight Status"
-  ) +
-  scale_fill_manual(values = c('#E06565', '#0088CC')) +
-  theme_minimal()
+
+# Graph side-by-side columns
+ggplot(on_time_flights, aes(x = city, y = percentage, fill = airline)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(label = sprintf("%.1f%%", percentage)), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5, size = 3) +
+  labs(title = "Percentage of flights on time per city", 
+       x = "City", 
+       y = "Percentage of On Time Flights (%)",
+       fill = "Airline") +
+  theme_minimal() +
+  scale_fill_manual(values = c('#00274A', '#007561')) # Respective airline colors
 ```
 
 ### Analysis summary
@@ -167,6 +173,6 @@ In summary, despite the drastic difference in the overall number of flights, we 
 
 ## Conclusion
 
-In this article we took a generated a simple dataset of flight data, tidied it into a proper long format for data analysis, then created visualizations to explore and understand how the rates of flight delays compare across airlines and cities.
+In this article we took a generated a simple dataset of flight data, tidied it into a proper long format for data analysis, then created visualizations to explore and understand how the rates of flight delays compare across airlines and cities. We identified a Simpson's Paradox when comparing the rate of flights on time between airlines, and then subsequently per airline per city, each of which suggested a different preferred airline.
 
 

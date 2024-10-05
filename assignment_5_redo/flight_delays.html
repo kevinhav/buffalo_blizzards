@@ -386,7 +386,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"City"</span>,</span>
 <span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Flight Status"</span></span>
 <span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span> </span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">'#E06565'</span>, <span class="st">'#0088CC'</span>)) <span class="sc">+</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">'#DB504A'</span>, <span class="st">'#A2A7A5'</span>)) <span class="sc">+</span></span>
 <span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
@@ -398,55 +398,64 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <section id="compare-delayed-flights-across-airlines" class="level3">
 <h3 class="anchored" data-anchor-id="compare-delayed-flights-across-airlines">Compare delayed flights across airlines</h3>
-<p>We can see that out of the total flights, AM West covers a significant proportion, but the rate of delayed versus on time is roughly comparable between the two airlines (~5-6%).</p>
+<p>When comparing airlines by flight status, we can see that the rate of delayed versus on time is roughly comparable between the two airlines, with AM west having about 11% of flights delayed and Alaska having 13%.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>df <span class="sc">|&gt;</span> </span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(flight_status, airline) <span class="sc">|&gt;</span> </span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">flights =</span> <span class="fu">sum</span>(flight_count)) <span class="sc">|&gt;</span> </span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">prop =</span> flights<span class="sc">/</span><span class="fu">sum</span>(flights)) <span class="sc">|&gt;</span> </span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">subset</span>(<span class="at">select=</span><span class="fu">c</span>(<span class="st">"flight_status"</span>, <span class="st">"airline"</span>, <span class="st">"prop"</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">spread</span>(flight_status, prop) <span class="sc">|&gt;</span> </span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>`summarise()` has grouped output by 'flight_status'. You can override using the
-`.groups` argument.</code></pre>
-</div>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(airline, flight_status) <span class="sc">|&gt;</span> </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">flight_count =</span> <span class="fu">sum</span>(flight_count), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">prop =</span> flight_count <span class="sc">/</span> <span class="fu">sum</span>(flight_count) <span class="sc">*</span> <span class="dv">100</span>, <span class="at">.by =</span> <span class="fu">c</span>(airline)) <span class="sc">|&gt;</span> </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
 <th style="text-align: left;">airline</th>
-<th style="text-align: right;">delayed</th>
-<th style="text-align: right;">on time</th>
+<th style="text-align: left;">flight_status</th>
+<th style="text-align: right;">flight_count</th>
+<th style="text-align: right;">prop</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">ALASKA</td>
-<td style="text-align: right;">0.3889752</td>
-<td style="text-align: right;">0.3371087</td>
+<td style="text-align: left;">delayed</td>
+<td style="text-align: right;">501</td>
+<td style="text-align: right;">13.27152</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ALASKA</td>
+<td style="text-align: left;">on time</td>
+<td style="text-align: right;">3274</td>
+<td style="text-align: right;">86.72848</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">AM WEST</td>
+<td style="text-align: left;">delayed</td>
+<td style="text-align: right;">787</td>
+<td style="text-align: right;">10.89273</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">AM WEST</td>
-<td style="text-align: right;">0.6110248</td>
-<td style="text-align: right;">0.6628913</td>
+<td style="text-align: left;">on time</td>
+<td style="text-align: right;">6438</td>
+<td style="text-align: right;">89.10727</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot amount of delayed flights by city</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> airline, <span class="at">y =</span> flight_count, <span class="at">fill =</span> flight_status)) <span class="sc">+</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">position =</span> <span class="st">"fill"</span>) <span class="sc">+</span> </span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Airline"</span>,</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Flights (proportion)"</span>,</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">" Proportion of flights delayed by airline"</span>,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Flight Status"</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">'#E06565'</span>, <span class="st">'#0088CC'</span>)) <span class="sc">+</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot amount of delayed flights by city</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> airline, <span class="at">y =</span> flight_count, <span class="at">fill =</span> flight_status)) <span class="sc">+</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">position =</span> <span class="st">"fill"</span>) <span class="sc">+</span> </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Airline"</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Flights (proportion)"</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">" Proportion of flights delayed by airline"</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Flight Status"</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">'#DB504A'</span>, <span class="st">'#A2A7A5'</span>)) <span class="sc">+</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -459,107 +468,123 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="compare-delays-across-cities" class="level3">
 <h3 class="anchored" data-anchor-id="compare-delays-across-cities">Compare delays across cities</h3>
 <p>San Francisco generally has the highest rate of delays for both airlines, especially for AM West. We can also see that Phoenix generally has the best rate of on-time flights.</p>
+<p>This chart also demonstrates that when comparing airlines across cities, Alaska has a better rate of on time flights, which contradicts our earlier observation that AM West had more on time flights. This is known as <a href="https://en.wikipedia.org/wiki/Simpson%27s_paradox">Simpson’s Paradox</a>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate proportions within each airline-city group</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>df_proportions <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(airline, city) <span class="sc">%&gt;%</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">total_flights =</span> <span class="fu">sum</span>(flight_count),</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">proportion =</span> flight_count <span class="sc">/</span> total_flights) <span class="sc">%&gt;%</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Reshape the data to wide format with flight_status as columns</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>df_proportions <span class="sc">%&gt;%</span></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(airline, city, flight_status, proportion) <span class="sc">%&gt;%</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> flight_status, <span class="at">values_from =</span> proportion) <span class="sc">|&gt;</span> </span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(airline, city) <span class="sc">|&gt;</span> </span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>on_time_flights <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span> </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(airline, city) <span class="sc">|&gt;</span> </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total_flights =</span> <span class="fu">sum</span>(flight_count), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">|&gt;</span>   </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(df <span class="sc">|&gt;</span> <span class="fu">filter</span>(flight_status <span class="sc">==</span> <span class="st">"on time"</span>) <span class="sc">|&gt;</span>   </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>              <span class="fu">group_by</span>(airline, city) <span class="sc">|&gt;</span> </span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>              <span class="fu">summarise</span>(<span class="at">on_time_count =</span> <span class="fu">sum</span>(flight_count), <span class="at">.groups =</span> <span class="st">"drop"</span>), </span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"airline"</span>, <span class="st">"city"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">percentage =</span> (on_time_count <span class="sc">/</span> total_flights) <span class="sc">*</span> <span class="dv">100</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() </span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Reorder the cities by total flight count</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>on_time_flights <span class="ot">&lt;-</span> on_time_flights <span class="sc">|&gt;</span> </span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">city =</span> <span class="fu">str_to_title</span>(<span class="fu">str_replace_all</span>(city, <span class="st">"_"</span>, <span class="st">" "</span>)), city) <span class="sc">|&gt;</span> </span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">city =</span> <span class="fu">fct_reorder</span>(city, total_flights))</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(on_time_flights)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
 <th style="text-align: left;">airline</th>
 <th style="text-align: left;">city</th>
-<th style="text-align: right;">on time</th>
-<th style="text-align: right;">delayed</th>
+<th style="text-align: right;">total_flights</th>
+<th style="text-align: right;">on_time_count</th>
+<th style="text-align: right;">percentage</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">ALASKA</td>
-<td style="text-align: left;">los_angeles</td>
-<td style="text-align: right;">0.8890877</td>
-<td style="text-align: right;">0.1109123</td>
+<td style="text-align: left;">Los Angeles</td>
+<td style="text-align: right;">559</td>
+<td style="text-align: right;">497</td>
+<td style="text-align: right;">88.90877</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">ALASKA</td>
-<td style="text-align: left;">phoenix</td>
-<td style="text-align: right;">0.9484979</td>
-<td style="text-align: right;">0.0515021</td>
+<td style="text-align: left;">Phoenix</td>
+<td style="text-align: right;">233</td>
+<td style="text-align: right;">221</td>
+<td style="text-align: right;">94.84979</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">ALASKA</td>
-<td style="text-align: left;">san_diego</td>
-<td style="text-align: right;">0.9137931</td>
-<td style="text-align: right;">0.0862069</td>
+<td style="text-align: left;">San Diego</td>
+<td style="text-align: right;">232</td>
+<td style="text-align: right;">212</td>
+<td style="text-align: right;">91.37931</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">ALASKA</td>
-<td style="text-align: left;">san_francisco</td>
-<td style="text-align: right;">0.8314050</td>
-<td style="text-align: right;">0.1685950</td>
+<td style="text-align: left;">San Francisco</td>
+<td style="text-align: right;">605</td>
+<td style="text-align: right;">503</td>
+<td style="text-align: right;">83.14050</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">ALASKA</td>
-<td style="text-align: left;">seattle</td>
-<td style="text-align: right;">0.8578751</td>
-<td style="text-align: right;">0.1421249</td>
+<td style="text-align: left;">Seattle</td>
+<td style="text-align: right;">2146</td>
+<td style="text-align: right;">1841</td>
+<td style="text-align: right;">85.78751</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">AM WEST</td>
-<td style="text-align: left;">los_angeles</td>
-<td style="text-align: right;">0.8557337</td>
-<td style="text-align: right;">0.1442663</td>
+<td style="text-align: left;">Los Angeles</td>
+<td style="text-align: right;">811</td>
+<td style="text-align: right;">694</td>
+<td style="text-align: right;">85.57337</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">AM WEST</td>
-<td style="text-align: left;">phoenix</td>
-<td style="text-align: right;">0.9210276</td>
-<td style="text-align: right;">0.0789724</td>
+<td style="text-align: left;">Phoenix</td>
+<td style="text-align: right;">5255</td>
+<td style="text-align: right;">4840</td>
+<td style="text-align: right;">92.10276</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">AM WEST</td>
-<td style="text-align: left;">san_diego</td>
-<td style="text-align: right;">0.8549107</td>
-<td style="text-align: right;">0.1450893</td>
+<td style="text-align: left;">San Diego</td>
+<td style="text-align: right;">448</td>
+<td style="text-align: right;">383</td>
+<td style="text-align: right;">85.49107</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">AM WEST</td>
-<td style="text-align: left;">san_francisco</td>
-<td style="text-align: right;">0.7126949</td>
-<td style="text-align: right;">0.2873051</td>
+<td style="text-align: left;">San Francisco</td>
+<td style="text-align: right;">449</td>
+<td style="text-align: right;">320</td>
+<td style="text-align: right;">71.26949</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">AM WEST</td>
-<td style="text-align: left;">seattle</td>
-<td style="text-align: right;">0.7671756</td>
-<td style="text-align: right;">0.2328244</td>
+<td style="text-align: left;">Seattle</td>
+<td style="text-align: right;">262</td>
+<td style="text-align: right;">201</td>
+<td style="text-align: right;">76.71756</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">y =</span> <span class="fu">str_to_title</span>(<span class="fu">str_replace_all</span>(city, <span class="st">"_"</span>, <span class="st">" "</span>)), <span class="at">x =</span> flight_count, <span class="at">fill =</span> flight_status)) <span class="sc">+</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">position =</span> <span class="st">'fill'</span>, <span class="at">stat=</span><span class="st">"identity"</span>) <span class="sc">+</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>airline) <span class="sc">+</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"City"</span>,</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Flights (proportion)"</span>,</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">" Proportion of flights delayed by airline"</span>,</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Flight Status"</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">'#E06565'</span>, <span class="st">'#0088CC'</span>)) <span class="sc">+</span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Graph side-by-side columns</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(on_time_flights, <span class="fu">aes</span>(<span class="at">x =</span> city, <span class="at">y =</span> percentage, <span class="at">fill =</span> airline)) <span class="sc">+</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> <span class="fu">sprintf</span>(<span class="st">"%.1f%%"</span>, percentage)), </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="fl">0.9</span>), </span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Percentage of flights on time per city"</span>, </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"City"</span>, </span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Percentage of On Time Flights (%)"</span>,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">fill =</span> <span class="st">"Airline"</span>) <span class="sc">+</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">'#00274A'</span>, <span class="st">'#007561'</span>)) <span class="co"># Respective airline colors</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -576,7 +601,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="conclusion" class="level2">
 <h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
-<p>In this article we took a generated a simple dataset of flight data, tidied it into a proper long format for data analysis, then created visualizations to explore and understand how the rates of flight delays compare across airlines and cities.</p>
+<p>In this article we took a generated a simple dataset of flight data, tidied it into a proper long format for data analysis, then created visualizations to explore and understand how the rates of flight delays compare across airlines and cities. We identified a Simpson’s Paradox when comparing the rate of flights on time between airlines, and then subsequently per airline per city, each of which suggested a different preferred airline.</p>
 </section>
 
 </main>
